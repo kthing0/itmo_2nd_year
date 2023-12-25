@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 1</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+        }
+        header {
+            background-color: #f0f0f0;
+            padding: 20px;
+            text-align: center;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .input-group {
+            margin-bottom: 10px;
+            margin-right: 232px;
+            min-width: 780px;
+        }
+        label {
+            display: inline-block;
+            width: 200px;
+            text-align: right;
+            margin-right: 10px;
+        }
+        .x-button {
+            padding: 10px 20px;
+            transition: all 0.2s;
+        }
+        .x-button.active {
+            padding: 14px 24px;
+        }
+        input[type="text"], /* селекторы атрибутов */
+        button[type="submit"] {
+            padding: 8px;
+        }
+        button[type="submit"] {
+            margin-left: 245px;
+        }
+        .error {
+            border: 2px solid red;
+        }
+        .result {
+            margin-top: 5px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            max-width: 400px;
+            width: 342px;
+            max-height: 150px;
+            float: right;
+            margin-right: 4px;
+        }
+        .input-container{
+            float: top;
+        }
+
+        .image-container{
+            padding-right: 10px;
+        }
+        .image-container img {
+            width: 250px;
+            height: auto;
+            border: 2px solid black;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Лабораторная работа #1</h1>
+    <p>ФИО: </p>
+    <p>Группа: </p>
+    <p>Вариант: </p>
+</header>
+<main>
+    <div class="image-container">
+        <img src="areas2.png" alt="areas">
+    </div>
+    <form id="coordinateForm" action="process.php" method="POST">
+        <div class="input-group">
+
+            <label for="x">Выберите X:</label>
+            <button type="button" class="x-button" value="-2">-2</button>
+            <button type="button" class="x-button" value="-1.5">-1.5</button>
+            <button type="button" class="x-button" value="-1">-1</button>
+            <button type="button" class="x-button" value="-0.5">-0.5</button>
+            <button type="button" class="x-button" value="0">0</button>
+            <button type="button" class="x-button" value="0.5">0.5</button>
+            <button type="button" class="x-button" value="1">1</button>
+            <button type="button" class="x-button" value="1.5">1.5</button>
+            <button type="button" class="x-button" value="2">2</button>
+            <input type="hidden" id="x" name="x">
+            <div id="result-container"></div>
+
+        </div>
+
+        <div class="input-container">
+            <div class="input-group">
+                <label for="y">Введите Y: </label>
+                <input type="text" id="y" name="y" placeholder="(-5..3)" required>
+            </div>
+
+            <div class="input-group">
+                <label for="r">Введите R:</label>
+                <input type="text" id="r" name="r" placeholder="(1..4)" required>
+            </div>
+        </div>
+
+
+        <div class ="input-group">
+            <input type="hidden" id="formattedDate" name="formattedDate">
+        </div>
+        <button id="submit" type="submit">Испытать удачу</button>
+    </form>
+
+    <script>
+        document.getElementById("submit").addEventListener("click", function () {
+            const currentDate = new Date();
+            document.getElementById("formattedDate").value = `${currentDate.toLocaleString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            })} | ${currentDate.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'})}`;
+        });
+    </script>
+
+
+    <table>
+        <thead>
+        <tr>
+            <th>X</th>
+            <th>Y</th>
+            <th>R</th>
+            <th>Результат</th>
+            <th>Время выполнения (ms)</th>
+            <th>Дата</th>
+        </tr>
+        </thead>
+        <tbody id="results-table">
+
+        </tbody>
+    </table>
+</main>
+
+<script src="script.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("coordinateForm");
+        const resultContainer = document.getElementById("result-container");
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            fetch("process.php", {
+                method: "POST",
+                body: new FormData(form),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    resultContainer.innerHTML =
+                        `<div class="result" >
+                          <p>Результат: <span style="color: ${data.result === 'Точка вне области' ? 'red' : 'green'}">${data.result}</span></p>
+                          <p>Время работы скрипта: ${data.exec_time} ms</p>
+                         </div>`;
+
+                    const resultsTable = document.getElementById("results-table");
+                    const newRow = document.createElement("tr");
+                    newRow.innerHTML = `
+                      <td>${data.x}</td>
+                      <td>${data.y}</td>
+                      <td>${data.r}</td>
+                      <td>${data.result}</td>
+                      <td>${data.exec_time}</td>
+                      <td>${data.formattedDate}</td>
+
+                    `;
+                    resultsTable.insertBefore(newRow, resultsTable.firstChild);
+                })
+                .catch((error) => {
+                    console.error("Что-то сломалось:\n", );
+                });
+        });
+    });
+</script>
+</body>
+</html>
